@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Kalyani",
+    "enabled": true,
+    "google_drive_folder_id": "1flCl9ql_tdF3qXH7nGQmk69F6_oypBXY",
+    "google_service_account_json": "uplifted-logic-488105-m4-0ebc69ef6f78.json"
+  },
+  {
+    "name": "Falta",
+    "enabled": true,
+    "google_drive_folder_id": "10TzZUpTA0DV8YaiZr8523hQbHQUrUCMA",
+    "google_service_account_json": "kalyani-sij-srj-04b2a1a57fc5.json"
+  },
+  {
+    "name": "HO",
+    "enabled": true,
+    "google_drive_folder_id": "1baliAfZaiiZjMQRDhvzsujkPz9I8UM7r",
+    "google_service_account_json": "kalyani-sij-srj-6000466e1c93.json"
+  }
+]

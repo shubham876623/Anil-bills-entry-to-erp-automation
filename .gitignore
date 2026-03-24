@@ -1,0 +1,20 @@
+# Credentials & secrets
+.env
+*.json
+!sites.json
+!package.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Data & logs
+extracted/
+input/
+failed_processing.log
+cookies.json
+
+# Screenshots
+*.png
+*.jpeg
+*.jpg
