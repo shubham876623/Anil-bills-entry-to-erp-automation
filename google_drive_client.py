@@ -48,15 +48,20 @@ def _list_pdf_page(service, folder_id: str, page_token) -> tuple[list, str | Non
     return files, r.get("nextPageToken")
 
 
-def _list_subfolders(service, folder_id: str, exclude_name: str = "Processed") -> list[dict]:
-    """List direct subfolders, excluding one by name."""
+def _list_subfolders(service, folder_id: str, exclude_names: set[str] | str = "Processed") -> list[dict]:
+    """List direct subfolders, excluding by name(s).
+    exclude_names can be a single string or a set of strings (case-insensitive)."""
+    if isinstance(exclude_names, str):
+        excluded = {exclude_names.lower()} if exclude_names else set()
+    else:
+        excluded = {n.lower() for n in exclude_names}
     params = _list_params(
         q=f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
         pageSize=100,
         fields="files(id, name)",
     )
     r = service.files().list(**params).execute()
-    return [f for f in r.get("files", []) if (f.get("name") or "").strip() != exclude_name]
+    return [f for f in r.get("files", []) if (f.get("name") or "").strip().lower() not in excluded]
 
 
 def get_folder_id_by_path(service, root_id: str, path: str) -> str | None:
@@ -66,7 +71,7 @@ def get_folder_id_by_path(service, root_id: str, path: str) -> str | None:
         return root_id
     current_id = root_id
     for name in (p.strip() for p in path.split("/") if p.strip()):
-        subs = _list_subfolders(service, current_id, exclude_name="")
+        subs = _list_subfolders(service, current_id, exclude_names=set())
         found = next((s["id"] for s in subs if (s.get("name") or "").strip() == name), None)
         if not found:
             return None
@@ -82,7 +87,7 @@ def find_folder_by_name(service, root_id: str, folder_name: str) -> str | None:
     target = folder_name.lower()
 
     def search(fid: str) -> str | None:
-        for s in _list_subfolders(service, fid, exclude_name="Processed"):
+        for s in _list_subfolders(service, fid, exclude_names=SKIP_FOLDER_NAMES):
             if (s.get("name") or "").strip().lower() == target:
                 return s["id"]
             found = search(s["id"])
@@ -93,8 +98,10 @@ def find_folder_by_name(service, root_id: str, folder_name: str) -> str | None:
     return search(root_id)
 
 
+SKIP_FOLDER_NAMES = {"Processed", "Done.", "Done", "Completed", "No Need to enter"}
+
 def list_pdf_files_in_folder(service, folder_id: str, recursive: bool = True) -> list[dict]:
-    """List all PDFs in folder (and subfolders except 'Processed'). Returns [{id, name, parent_id}]."""
+    """List all PDFs in folder (and subfolders except known 'done' folders). Returns [{id, name, parent_id}]."""
     all_pdfs = []
 
     def collect(fid: str):
@@ -105,7 +112,7 @@ def list_pdf_files_in_folder(service, folder_id: str, recursive: bool = True) ->
             if not token:
                 break
         if recursive:
-            for sub in _list_subfolders(service, fid):
+            for sub in _list_subfolders(service, fid, exclude_names=SKIP_FOLDER_NAMES):
                 collect(sub["id"])
 
     collect(folder_id)
